@@ -1,17 +1,18 @@
 version: '3.12'
 
 services:
-  analytics-postgres-db:
-    image: postgres:latest
-    container_name: db_for_analytics
+  analytics-mongo-db:
+    image: mongo:latest
+    container_name: analytics_mongo_db
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
-      - "5434:5432"
+      - "27017:27017"
     volumes:
-      - pg_data_analytics:/var/lib/postgresql/data
+      - mongo_data:/data/db
+    networks:
+      - app-network
 
   todo_analytics:
     build:
@@ -19,18 +20,18 @@ services:
     ports:
       - "8002:8000"
     depends_on:
-      - analytics-postgres-db
-    environment:
-      DEBUG: ${DEBUG}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: db_for_analytics
-      DB_PORT: ${DB_PORT}
-      PYTHONUNBUFFERED: 1
+      - analytics-mongo-db
+    env_file:
+      - .env
     entrypoint:
       - ./entrypoint.sh
+    networks:
+      - app-network
 
 
 volumes:
-  pg_data_analytics:
+  mongo_data:
+
+networks:
+  app-network:
+    driver: bridge
