@@ -26,15 +26,11 @@ class PyObjectId(ObjectId):
 
 
 class TaskModel(BaseModel):
-    task_id: PyObjectId
-    project_id: PyObjectId
     title: str
     status: str
     is_active: bool
     executor_id: int
     executor_name: str
-    created_at: datetime
-    completed_at: Optional[datetime] = None
 
     @validator("status")
     def validate_status(cls, value):
@@ -47,10 +43,9 @@ class TaskModel(BaseModel):
 
 
 class ProjectModel(BaseModel):
-    project_id: PyObjectId
     title: str
     is_active: bool
-    tasks: List[PyObjectId]
+    task: int
     participants_ids: List[int]
 
 

@@ -45,12 +45,8 @@ class StatisticsService:
         projects_stats = await self.task_repo.get_weekly_participant_stats(
             participant_id
         )
-        executor_name = await self.task_repo.get_executor_name_from_execution_id(
-            participant_id
-        )
 
         return ParticipantStatistics(
             participant_id=participant_id,
-            participant_name=executor_name,
             projects_statistics=projects_stats,
         )

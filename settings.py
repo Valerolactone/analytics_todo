@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     debug: bool = Field(False, env="DEBUG")
 
+    kafka_bootstrap_servers: str = Field(..., env="KAFKA_BOOTSTRAP_SERVERS")
+
     model_config = SettingsConfigDict(env_file=".env")
 
     @property

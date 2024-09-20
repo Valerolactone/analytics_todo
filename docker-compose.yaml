@@ -27,6 +27,7 @@ services:
       - ./entrypoint.sh
     networks:
       - app-network
+      - kafka-net
 
 
 volumes:
@@ -35,3 +36,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  kafka-net:
+    external: true
