@@ -4,10 +4,7 @@ from typing import Dict, List
 
 from bson import ObjectId
 
-from app.exceptions import (
-    ProjectNotFoundException,
-    TaskNotFoundException,
-)
+from app.exceptions import ProjectNotFoundException, TaskNotFoundException
 from app.schemas import PyObjectId
 
 
@@ -70,7 +67,7 @@ class ProjectRepository:
         )
 
     async def update_project_tasks_and_participants_lists(
-            self, title: str, task: ObjectId, participants_ids: List[int]
+        self, title: str, task: ObjectId, participants_ids: List[int]
     ):
         await self.collection.update_one(
             {"$title": title},
@@ -83,7 +80,7 @@ class ProjectRepository:
         )
 
     async def update_project_participants_lists(
-            self, title: str, participants_ids: List[int]
+        self, title: str, participants_ids: List[int]
     ):
         await self.collection.update_one(
             {"$title": title},
@@ -160,7 +157,7 @@ class TaskRepository:
         return result[0]["average_completion_time"] / (1000 * 60 * 60) if result else 0
 
     async def get_weekly_participant_stats(
-            self, executor_id: int
+        self, executor_id: int
     ) -> List[Dict[str, str | int]]:
         now = datetime.utcnow()
         start_of_week = now - timedelta(days=now.weekday())
@@ -205,11 +202,11 @@ class TaskRepository:
         return stats
 
     async def create_task(
-            self,
-            project_title: str,
-            title: str,
-            status: str,
-            executor_id: int,
+        self,
+        project_title: str,
+        title: str,
+        status: str,
+        executor_id: int,
     ):
         related_project = await ProjectRepository.get_project_by_title(project_title)
 
@@ -247,11 +244,17 @@ class TaskRepository:
 
         updates = {"status": status}
 
-        if status in [TaskStatus.RESOLVED, TaskStatus.CLOSED] and task.get("completed_at") is None:
+        if (
+            status in [TaskStatus.RESOLVED, TaskStatus.CLOSED]
+            and task.get("completed_at") is None
+        ):
             updates["completed_at"] = datetime.utcnow()
         if status == TaskStatus.REOPENED and task.get("completed_at") is not None:
             updates["reopened_at"] = datetime.utcnow()
-        if status in [TaskStatus.RESOLVED, TaskStatus.CLOSED] and task.get("reopened_at") is not None:
+        if (
+            status in [TaskStatus.RESOLVED, TaskStatus.CLOSED]
+            and task.get("reopened_at") is not None
+        ):
             updates["recompleted_at"] = datetime.utcnow()
 
         await self.collection.update_one({"title": title}, {"$set": updates})

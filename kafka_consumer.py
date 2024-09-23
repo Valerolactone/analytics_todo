@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 class KafkaConsumer:
-    def __init__(self, topic: str, group_id: str, broker: str = settings.kafka_bootstrap_servers):
+    def __init__(
+        self, topic: str, group_id: str, broker: str = settings.kafka_bootstrap_servers
+    ):
         self.topic = topic
         self.group_id = group_id
         self.consumer = AIOKafkaConsumer(
@@ -25,7 +27,6 @@ class KafkaConsumer:
             bootstrap_servers=broker,
             group_id=self.group_id,
             auto_offset_reset="earliest",
-
         )
         self.project_repo = MongoDB.get_project_repository()
         self.task_repo = MongoDB.get_task_repository()
@@ -85,7 +86,7 @@ class KafkaConsumer:
                     )
 
                 elif decoded_message.get("executor_id") and decoded_message.get(
-                        "executor_name"
+                    "executor_name"
                 ):
                     await self.task_repo.update_task_executor(
                         title=decoded_message.get("title"),

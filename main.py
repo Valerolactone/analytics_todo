@@ -9,7 +9,9 @@ from kafka_consumer import KafkaConsumer
 from settings import settings
 
 app = FastAPI()
-kafka_consumer = KafkaConsumer(topic="projects_and_related_tasks_topic", group_id="core")
+kafka_consumer = KafkaConsumer(
+    topic="projects_and_related_tasks_topic", group_id="core"
+)
 
 
 async def start_kafka_consumer():
