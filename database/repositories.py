@@ -1,14 +1,22 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from enum import Enum
+from typing import Dict, List
 
 from bson import ObjectId
 
 from app.exceptions import (
-    ParticipantNotFoundException,
     ProjectNotFoundException,
     TaskNotFoundException,
 )
 from app.schemas import PyObjectId
+
+
+class TaskStatus(Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in progress"
+    RESOLVED = "resolved"
+    REOPENED = "reopened"
+    CLOSED = "closed"
 
 
 class ProjectRepository:
@@ -97,8 +105,6 @@ class TaskRepository:
         return await self.collection.count_documents({"project_id": project_id})
 
     async def get_task_status_counts(self, project_id: PyObjectId) -> Dict[str, int]:
-        possible_statuses = ["open", "in progress", "resolved", "reopened", "closed"]
-
         pipline = [
             {"$match": {"project_id": project_id}},
             {"$group": {"_id": "$status", "$count": {"$sum": 1}}},
@@ -108,7 +114,7 @@ class TaskRepository:
 
         total_tasks = sum(item["count"] for item in result)
 
-        status_percentages = {status: 0 for status in possible_statuses}
+        status_percentages = {status.value: 0 for status in TaskStatus}
 
         for item in result:
             status = item["_id"]
@@ -208,7 +214,7 @@ class TaskRepository:
         related_project = await ProjectRepository.get_project_by_title(project_title)
 
         if not related_project:
-            raise ProjectNotFoundException
+            raise ProjectNotFoundException(project_title)
 
         project_id = related_project.get("project_id")
         new_task = {
@@ -237,15 +243,15 @@ class TaskRepository:
         task = await self.get_task_by_title(title)
 
         if not task:
-            raise TaskNotFoundException
+            raise TaskNotFoundException(title)
 
         updates = {"status": status}
 
-        if status in ["resolved", "closed"] and task.get("completed_at") is None:
+        if status in [TaskStatus.RESOLVED, TaskStatus.CLOSED] and task.get("completed_at") is None:
             updates["completed_at"] = datetime.utcnow()
-        if status == "reopened" and task.get("completed_at") is not None:
+        if status == TaskStatus.REOPENED and task.get("completed_at") is not None:
             updates["reopened_at"] = datetime.utcnow()
-        if status in ["resolved", "closed"] and task.get("reopened_at") is not None:
+        if status in [TaskStatus.RESOLVED, TaskStatus.CLOSED] and task.get("reopened_at") is not None:
             updates["recompleted_at"] = datetime.utcnow()
 
         await self.collection.update_one({"title": title}, {"$set": updates})

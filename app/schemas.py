@@ -1,8 +1,9 @@
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, validator
+from pydantic import BaseModel, ConfigDict
+from pydantic.class_validators import field_validator
+from database.repositories import TaskStatus
 
 
 class TunedModel(BaseModel):
@@ -32,10 +33,10 @@ class TaskModel(BaseModel):
     executor_id: int
     executor_name: str
 
-    @validator("status")
+    @field_validator('status')
     def validate_status(cls, value):
-        valid_statuses = {"open", "in progress", "resolved", "reopened", "closed"}
-        if value not in valid_statuses:
+        if value not in TaskStatus:
+            valid_statuses = [status.value for status in TaskStatus]
             raise ValueError(
                 f"Invalid status: {value}. Valid statuses are {valid_statuses}."
             )
