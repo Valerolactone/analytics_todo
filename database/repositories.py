@@ -4,8 +4,13 @@ from typing import Dict, List
 
 from bson import ObjectId
 
-from app.exceptions import ProjectNotFoundException, TaskNotFoundException
+from app.exceptions import (
+    ParticipantNotFoundException,
+    ProjectNotFoundException,
+    TaskNotFoundException,
+)
 from app.schemas import PyObjectId
+from database.session import MongoDB
 
 
 class TaskStatus(Enum):
@@ -25,11 +30,11 @@ class ProjectRepository:
 
     async def count_unique_participants(self) -> int:
         pipeline = [
-            {"$unwind": "$participants"},
+            {"$unwind": "$participants_ids"},
             {
                 "$group": {
                     "_id": None,
-                    "unique_participants": {"$addToSet": "$participants"},
+                    "unique_participants": {"$addToSet": "$participants_ids"},
                 }
             },
             {"$project": {"unique_participants": {"$size": "$unique_participants"}}},
@@ -101,10 +106,13 @@ class TaskRepository:
     async def count_tasks_for_project(self, project_id: PyObjectId) -> int:
         return await self.collection.count_documents({"project_id": project_id})
 
+    async def check_executor_exists(self, executor_id: int) -> bool:
+        return await self.collection.count_documents({"executor_id": executor_id}) > 0
+
     async def get_task_status_counts(self, project_id: PyObjectId) -> Dict[str, int]:
         pipline = [
             {"$match": {"project_id": project_id}},
-            {"$group": {"_id": "$status", "$count": {"$sum": 1}}},
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}},
         ]
 
         result = await self.collection.aggregate(pipline).to_list(length=None)
@@ -117,7 +125,7 @@ class TaskRepository:
             status = item["_id"]
             count = item["count"]
             percentage = (count / total_tasks * 100) if total_tasks > 0 else 0
-            status_percentages[status] = percentage
+            status_percentages[status] = round(percentage)
 
         return status_percentages
 
@@ -208,14 +216,14 @@ class TaskRepository:
         status: str,
         executor_id: int,
     ):
-        related_project = await ProjectRepository.get_project_by_title(project_title)
+        project_repo = ProjectRepository(MongoDB.get_database())
+        related_project = await project_repo.get_project_by_title(project_title)
 
         if not related_project:
             raise ProjectNotFoundException(project_title)
 
-        project_id = related_project.get("project_id")
         new_task = {
-            "project_id": project_id,
+            "project_id": related_project["_id"],
             "title": title,
             "status": status,
             "is_active": True,

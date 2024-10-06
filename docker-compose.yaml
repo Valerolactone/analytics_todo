@@ -14,6 +14,12 @@ services:
     networks:
       - app-network
 
+  test-mongo:
+    image: mongo:latest
+    container_name: test_mongo
+    ports:
+      - "27018:27017"
+
   todo_analytics:
     build:
       context: .

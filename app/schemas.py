@@ -1,10 +1,9 @@
 from typing import Dict, List
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict
-from pydantic.class_validators import field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from database.repositories import TaskStatus
+from app.utils import TaskStatus
 
 
 class TunedModel(BaseModel):
@@ -17,14 +16,10 @@ class PyObjectId(ObjectId):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value, field):
         if not ObjectId.is_valid(value):
             raise ValueError("Invalid objectid")
         return ObjectId(value)
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, schema, **kwargs):
-        return {"type": "string"}
 
 
 class TaskModel(BaseModel):
@@ -65,8 +60,10 @@ class ProjectStatistics(TunedModel):
     avg_completion_time_in_hours: float
     status_percentages: Dict[str, int]
 
+    class Config:
+        json_encoders = {ObjectId: str}
+
 
 class ParticipantStatistics(TunedModel):
     participant_id: int
-    participant_name: str
     projects_statistics: List[Dict[str, str | int]]

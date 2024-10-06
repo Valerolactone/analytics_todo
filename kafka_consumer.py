@@ -15,23 +15,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class KafkaConsumer:
+class KafkaConsumerManager:
     def __init__(
         self, topic: str, group_id: str, broker: str = settings.kafka_bootstrap_servers
     ):
         self.topic = topic
         self.group_id = group_id
-        self.consumer = AIOKafkaConsumer(
-            self.topic,
-            loop=asyncio.get_event_loop(),
-            bootstrap_servers=broker,
-            group_id=self.group_id,
-            auto_offset_reset="earliest",
-        )
+        self.broker = broker
+        self.consumer = None
+        self.project_repo = None
+        self.task_repo = None
+
+    async def init(self):
         self.project_repo = MongoDB.get_project_repository()
         self.task_repo = MongoDB.get_task_repository()
 
     async def start(self):
+        await self.init()
+        self.consumer = AIOKafkaConsumer(
+            self.topic,
+            loop=asyncio.get_event_loop(),
+            bootstrap_servers=self.broker,
+            group_id=self.group_id,
+            auto_offset_reset="earliest",
+        )
         await self.consumer.start()
         try:
             await self.consume_messages()
@@ -44,8 +51,6 @@ class KafkaConsumer:
                 await self.process_message(message)
         except Exception as e:
             logger.error(f"Error while consuming messages: {e}", exc_info=True)
-        finally:
-            await self.consumer.stop()
 
     async def process_message(self, message):
         try:

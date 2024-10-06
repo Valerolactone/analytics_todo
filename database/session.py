@@ -2,8 +2,6 @@ from typing import Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from database.repositories import ProjectRepository, TaskRepository
-
 
 class MongoDB:
     client: Optional[AsyncIOMotorClient] = None
@@ -28,9 +26,13 @@ class MongoDB:
         return cls.client.get_database(cls.db_name)
 
     @classmethod
-    def get_project_repository(cls) -> ProjectRepository:
+    def get_project_repository(cls):
+        from database.repositories import ProjectRepository
+
         return ProjectRepository(cls.get_database())
 
     @classmethod
-    def get_task_repository(cls) -> TaskRepository:
+    def get_task_repository(cls):
+        from database.repositories import TaskRepository
+
         return TaskRepository(cls.get_database())

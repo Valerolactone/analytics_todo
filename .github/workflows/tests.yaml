@@ -2,23 +2,42 @@ name: Run tests
 
 on:
   push:
-    branches: [ "develop", 'github-actions']
+    branches: [ "develop" ]
   pull_request:
     branches: [ "develop" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: example
+          MONGO_INITDB_ROOT_PASSWORD: example
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - name: Checkout branch
       uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: 3.12
+
     - name: Install poetry
       uses: abatilo/actions-poetry@v2
+
     - name: Install dependencies
       run: poetry install
+
     - name: Test with pytest
-      run: poetry run pytest tests/
+      run: poetry run pytest

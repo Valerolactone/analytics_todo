@@ -1,3 +1,4 @@
+from app.exceptions import ParticipantNotFoundException, ProjectNotFoundException
 from app.schemas import ParticipantStatistics, ProjectStatistics, Statistics
 from database.session import MongoDB
 
@@ -20,10 +21,11 @@ class StatisticsService:
 
     async def get_project_statistics(self, title: str) -> ProjectStatistics:
         project = await self.project_repo.get_project_by_title(title)
-        project_id = await project["project_id"]
-        project_participants = await self.project_repo.get_project_participants(
-            project_id
-        )
+        if not project:
+            raise ProjectNotFoundException(title)
+
+        project_id = project["_id"]
+        project_participants = await self.project_repo.get_project_participants(title)
         total_tasks = await self.task_repo.count_tasks_for_project(project_id)
         status_percentages = await self.task_repo.get_task_status_counts(project_id)
         avg_completion_time = await self.task_repo.get_average_completion_time(
@@ -42,6 +44,9 @@ class StatisticsService:
     async def get_weekly_participant_statistics(
         self, participant_id: int
     ) -> ParticipantStatistics:
+        if not await self.task_repo.check_executor_exists(participant_id):
+            raise ParticipantNotFoundException(participant_id)
+
         projects_stats = await self.task_repo.get_weekly_participant_stats(
             participant_id
         )
