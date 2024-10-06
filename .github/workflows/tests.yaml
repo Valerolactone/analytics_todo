@@ -37,7 +37,7 @@ jobs:
         docker-compose -f docker-compose.yaml up -d
         docker-compose -f docker-compose.yaml exec -T todo_analytics pytest tests
 
-    - name: Clean up
+    - name: Clean
       if: always()
       run: |
         docker-compose -f docker-compose.yaml down
