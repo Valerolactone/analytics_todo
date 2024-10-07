@@ -5,29 +5,26 @@ from fastapi import APIRouter, FastAPI
 
 from app.routers import statistics_router
 from database.session import MongoDB
-from kafka_consumer import KafkaConsumer
+from kafka_consumer import KafkaConsumerManager
 from settings import settings
 
 app = FastAPI()
-kafka_consumer = KafkaConsumer(
+kafka_manager = KafkaConsumerManager(
     topic="projects_and_related_tasks_topic", group_id="core"
 )
 
 
-async def start_kafka_consumer():
-    await kafka_consumer.start()
-
-
 @app.on_event("startup")
-async def startup_db_client():
+async def startup_event():
     await MongoDB.connect(settings.mongo_uri, settings.mongo_db_name)
-    asyncio.create_task(start_kafka_consumer())
+    asyncio.create_task(kafka_manager.start())
 
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def shutdown_event():
+    if kafka_manager.consumer:
+        await kafka_manager.consumer.stop()
     await MongoDB.close()
-    await kafka_consumer.consumer.stop()
 
 
 @app.get("/")
