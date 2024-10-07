@@ -15,14 +15,6 @@ jobs:
         image: mongo:latest
         ports:
           - 27018:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: ${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-        options: >-
-          --health-cmd "mongo --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
     - name: Checkout branch
@@ -39,16 +31,7 @@ jobs:
     - name: Install dependencies
       run: poetry install
 
-    - name: Wait for MongoDB to be ready
-      run: |
-        echo "Waiting for MongoDB to start..."
-        sleep 20  
-        until nc -z localhost 27019; do
-          echo "Waiting for MongoDB..."
-          sleep 5
-        done
-
     - name: Test with pytest
       env:
-        MONGO_URI: "mongodb://localhost:27018/test_db"
+        MONGO_URI: "mongodb://localhost:27018"
       run: poetry run pytest tests
