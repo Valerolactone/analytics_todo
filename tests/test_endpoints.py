@@ -75,7 +75,7 @@ async def test_read_participant_statistics(
 
 
 async def test_read_participant_statistics_not_found(async_test_client: AsyncClient):
-    executor_id = 999
+    executor_id = 0
 
     response = await async_test_client.get(f"/statistics/weekly/{executor_id}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
